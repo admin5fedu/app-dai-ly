@@ -12,7 +12,7 @@ export function ProductSearch({ searchValue, setSearchValue, onSearch, isSearchi
       setIsDebouncing(false)
     }, 300)
   )
-  
+
   useEffect(() => {
     if (searchValue.trim()) {
       setIsDebouncing(true)
@@ -22,14 +22,14 @@ export function ProductSearch({ searchValue, setSearchValue, onSearch, isSearchi
       onSearch('')
     }
   }, [searchValue])
-  
+
   const showLoading = isDebouncing || isSearching
-  
+
   return (
     <div className="relative">
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
       <Input
-        placeholder="Tìm kiếm theo tên, mã sản phẩm, mã vạch..."
+        placeholder="Tìm kiếm tên, tên khác, mã, mã vạch..."
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
         className={cn("pl-10 pr-10 h-11", showLoading && "pr-16")}

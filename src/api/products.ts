@@ -13,6 +13,7 @@ export type Product = {
   do_vi_tinh: string
   link_anh_san_pham: string
   gia_ban: string
+  ten_khac: string
 }
 
 export type ProductType = 'parent' | 'child' | 'standalone'
@@ -22,7 +23,7 @@ export type ProductType = 'parent' | 'child' | 'standalone'
  */
 export function parseProducts(rows: any[][]): Product[] {
   if (!rows || rows.length < 2) return []
-  
+
   // Skip header row
   return rows.slice(1).map(row => ({
     ID: String(row[0] || ''),
@@ -32,9 +33,10 @@ export function parseProducts(rows: any[][]): Product[] {
     ma_vach: String(row[4] || ''),
     ma_san_pham: String(row[5] || ''),
     ten_san_pham: String(row[6] || ''),
-    do_vi_tinh: String(row[7] || ''),
-    link_anh_san_pham: String(row[8] || ''),
-    gia_ban: String(row[9] || ''),
+    ten_khac: String(row[7] || ''),
+    do_vi_tinh: String(row[8] || ''),
+    link_anh_san_pham: String(row[9] || ''),
+    gia_ban: String(row[10] || ''),
   })).filter(p => p.ID && p.ten_san_pham) // Filter out empty rows
 }
 
@@ -43,7 +45,7 @@ export function parseProducts(rows: any[][]): Product[] {
  */
 export function groupProductsByParent(products: Product[]): Map<string, Product[]> {
   const grouped = new Map<string, Product[]>()
-  
+
   products.forEach(product => {
     if (product.id_san_pham_cha && product.id_san_pham_cha.trim()) {
       const parentId = product.id_san_pham_cha.trim()
@@ -53,7 +55,7 @@ export function groupProductsByParent(products: Product[]): Map<string, Product[
       grouped.get(parentId)!.push(product)
     }
   })
-  
+
   return grouped
 }
 
@@ -65,13 +67,14 @@ export function filterProducts(products: Product[], searchTerm: string): Product
     // Only show parents and standalone products (no children)
     return products.filter(p => !p.id_san_pham_cha || !p.id_san_pham_cha.trim())
   }
-  
+
   const term = searchTerm.toLowerCase().trim()
-  return products.filter(product => 
+  return products.filter(product =>
     product.ten_san_pham.toLowerCase().includes(term) ||
     product.ma_san_pham.toLowerCase().includes(term) ||
     product.ma_vach.toLowerCase().includes(term) ||
-    product.ten_san_pham_cha.toLowerCase().includes(term)
+    product.ten_san_pham_cha.toLowerCase().includes(term) ||
+    product.ten_khac.toLowerCase().includes(term)
   )
 }
 

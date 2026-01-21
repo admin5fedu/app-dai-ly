@@ -17,6 +17,7 @@ function areEqual(prevProps, nextProps) {
     prevProps.product.link_anh_san_pham === nextProps.product.link_anh_san_pham &&
     prevProps.product.gia_ban === nextProps.product.gia_ban &&
     prevProps.product.do_vi_tinh === nextProps.product.do_vi_tinh &&
+    prevProps.product.ten_khac === nextProps.product.ten_khac &&
     prevProps.type === nextProps.type &&
     prevProps.childrenCount === nextProps.childrenCount
   )
@@ -26,7 +27,7 @@ function ProductCardComponent({ product, type, childrenCount, onClick }) {
   if (!product) return null
 
   return (
-    <Card 
+    <Card
       className={cn(
         'transition-all duration-200 cursor-pointer',
         'hover:shadow-md hover:border-primary/20',
@@ -49,7 +50,7 @@ function ProductCardComponent({ product, type, childrenCount, onClick }) {
               fallbackIconSize={32}
             />
           </div>
-          
+
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
@@ -57,11 +58,18 @@ function ProductCardComponent({ product, type, childrenCount, onClick }) {
                 <h3 className="font-semibold text-sm leading-tight line-clamp-2">
                   {product.ten_san_pham || 'Không có tên'}
                 </h3>
-                {product.ma_san_pham && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {product.ma_san_pham}
-                  </p>
-                )}
+                <div className="flex flex-col gap-0.5 mt-1">
+                  {product.ma_san_pham && (
+                    <p className="text-xs text-muted-foreground">
+                      {product.ma_san_pham}
+                    </p>
+                  )}
+                  {product.ten_khac && product.ten_khac.trim() && (
+                    <p className="text-xs text-muted-foreground italic break-words">
+                      {product.ten_khac}
+                    </p>
+                  )}
+                </div>
               </div>
               {type === 'parent' && childrenCount > 0 && (
                 <Badge variant="secondary" className="shrink-0 text-xs flex items-center gap-1">
@@ -70,7 +78,7 @@ function ProductCardComponent({ product, type, childrenCount, onClick }) {
                 </Badge>
               )}
             </div>
-            
+
             <div className="flex items-center justify-between mt-2.5">
               <div className="flex gap-1.5 flex-wrap">
                 {type === 'parent' && (

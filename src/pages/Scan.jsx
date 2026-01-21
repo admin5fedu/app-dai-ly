@@ -29,11 +29,11 @@ export default function Scan() {
   const scannerContainerRef = useRef(null)
   const isScannerStartedRef = useRef(false)
   const fileInputRef = useRef(null)
-  
+
   const { data, isLoading } = useReadSheet({
     sheetName: 'san_pham'
   })
-  
+
   const products = useMemo(() => {
     if (!data?.values) return []
     try {
@@ -43,7 +43,7 @@ export default function Scan() {
       return []
     }
   }, [data])
-  
+
   // Debounce search term với 300ms delay
   useEffect(() => {
     if (searchTerm.trim()) {
@@ -52,20 +52,20 @@ export default function Scan() {
         setDebouncedSearchTerm(searchTerm)
         setIsSearching(false)
       }, 300)
-      
+
       return () => clearTimeout(timer)
     } else {
       setDebouncedSearchTerm('')
       setIsSearching(false)
     }
   }, [searchTerm])
-  
+
   // Hàm trích xuất mã từ kết quả quét (xử lý URL)
   const extractCodeFromResult = (result) => {
     if (!result) return ''
-    
+
     const trimmed = result.trim()
-    
+
     // Nếu là URL, lấy phần path cuối cùng
     try {
       const url = new URL(trimmed)
@@ -77,27 +77,29 @@ export default function Scan() {
       return trimmed
     }
   }
-  
+
   // Tìm kiếm sản phẩm theo ID, ten_san_pham, ma_vach
   const searchResults = useMemo(() => {
     if (!debouncedSearchTerm.trim()) return []
-    
+
     const term = debouncedSearchTerm.trim().toLowerCase()
     const results = products.filter(product => {
       const id = String(product.ID || '').toLowerCase()
       const tenSanPham = (product.ten_san_pham || '').toLowerCase()
       const maVach = (product.ma_vach || '').toLowerCase()
-      
-      return id === term || 
-             id.includes(term) || 
-             tenSanPham.includes(term) || 
-             maVach === term ||
-             maVach.includes(term)
+      const tenKhac = (product.ten_khac || '').toLowerCase()
+
+      return id === term ||
+        id.includes(term) ||
+        tenSanPham.includes(term) ||
+        maVach === term ||
+        maVach.includes(term) ||
+        tenKhac.includes(term)
     })
-    
+
     return results.slice(0, 20) // Giới hạn 20 kết quả
   }, [products, debouncedSearchTerm])
-  
+
   // Khởi tạo và cleanup camera
   useEffect(() => {
     if (!isScanning) {
@@ -105,21 +107,21 @@ export default function Scan() {
       if (html5QrCodeRef.current && isScannerStartedRef.current) {
         const scanner = html5QrCodeRef.current
         isScannerStartedRef.current = false
-        scanner.stop().catch(() => {}).then(() => {
+        scanner.stop().catch(() => { }).then(() => {
           try {
             scanner.clear()
-          } catch (e) {}
+          } catch (e) { }
           html5QrCodeRef.current = null
         }).catch(() => {
           try {
             scanner.clear()
-          } catch (e) {}
+          } catch (e) { }
           html5QrCodeRef.current = null
         })
       }
       return
     }
-    
+
     // Đảm bảo container đã được render
     if (!scannerContainerRef.current) {
       // Retry sau một chút nếu container chưa sẵn sàng
@@ -131,22 +133,22 @@ export default function Scan() {
       }, 100)
       return () => clearTimeout(timeoutId)
     }
-    
+
     let html5QrCode = null
     let isMounted = true
-    
+
     const startScanning = async () => {
       try {
         // Đảm bảo container vẫn tồn tại
         if (!scannerContainerRef.current || !isScanning) {
           return
         }
-        
+
         html5QrCode = new Html5Qrcode(scannerContainerRef.current.id)
         html5QrCodeRef.current = html5QrCode
-        
+
         setCameraPermissionDenied(false)
-        
+
         // Bắt đầu quét với qrbox hình vuông (hỗ trợ cả QR code và barcode)
         await html5QrCode.start(
           { facingMode: "environment" },
@@ -158,12 +160,12 @@ export default function Scan() {
           async (decodedText, decodedResult) => {
             // Kiểm tra component vẫn mounted và đang scanning
             if (!isMounted || !isScanning) return
-            
+
             // Khi quét thành công: rung điện thoại
             if ('vibrate' in navigator) {
               navigator.vibrate(200)
             }
-            
+
             // Dừng scanner trước khi cập nhật state
             try {
               await html5QrCode.stop()
@@ -173,12 +175,12 @@ export default function Scan() {
             } catch (e) {
               // Ignore cleanup errors
             }
-            
+
             // Trích xuất mã từ kết quả quét và điền vào ô search
             const extractedCode = extractCodeFromResult(decodedText)
             setSearchTerm(extractedCode)
             setIsScanning(false)
-            
+
             toast.success('Quét mã thành công!')
           },
           (errorMessage) => {
@@ -186,16 +188,16 @@ export default function Scan() {
             // Đây là lỗi bình thường khi scanner đang tìm mã, không cần xử lý
           }
         )
-        
+
         if (isMounted && isScanning) {
           isScannerStartedRef.current = true
         }
       } catch (error) {
         console.error('Camera error:', error)
         isScannerStartedRef.current = false
-        
+
         if (!isMounted) return
-        
+
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
           setCameraPermissionDenied(true)
           setIsScanning(false)
@@ -210,73 +212,73 @@ export default function Scan() {
           setIsScanning(false)
           toast.error('Không thể mở camera. Vui lòng thử lại.')
         }
-        
+
         // Cleanup on error
         if (html5QrCode) {
           try {
             html5QrCode.clear()
-          } catch (e) {}
+          } catch (e) { }
           html5QrCodeRef.current = null
         }
       }
     }
-    
+
     startScanning()
-    
+
     return () => {
       isMounted = false
-      
+
       // Cleanup khi component unmount hoặc isScanning thay đổi
       if (html5QrCodeRef.current) {
         const scanner = html5QrCodeRef.current
         isScannerStartedRef.current = false
-        
+
         if (scanner) {
-          scanner.stop().catch(() => {}).then(() => {
+          scanner.stop().catch(() => { }).then(() => {
             try {
               scanner.clear()
-            } catch (e) {}
+            } catch (e) { }
             html5QrCodeRef.current = null
           }).catch(() => {
             try {
               scanner.clear()
-            } catch (e) {}
+            } catch (e) { }
             html5QrCodeRef.current = null
           })
         }
       }
     }
   }, [isScanning])
-  
+
   const handleSearch = (value) => {
     setSearchTerm(value)
   }
-  
+
   const handleClear = () => {
     setSearchTerm('')
     setIsScanning(false)
   }
-  
+
   const handleProductClick = (product) => {
     navigate(`/products/${product.ID}`, {
       state: { from: '/scan' }
     })
   }
-  
+
   const handleScanClick = async () => {
     setIsScanning(true)
     setCameraPermissionDenied(false)
   }
-  
+
   const handleStopScan = () => {
     setIsScanning(false)
     // Cleanup sẽ được xử lý bởi useEffect
   }
-  
+
   const handleImageUpload = () => {
     fileInputRef.current?.click()
   }
-  
+
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -293,12 +295,12 @@ export default function Scan() {
         tempDiv.style.left = '-9999px'
         document.body.appendChild(tempDiv)
       }
-      
+
       const html5QrCode = new Html5Qrcode(tempDivId)
-      
+
       // Sử dụng scanFile() là instance method, không phải static method
       const result = await html5QrCode.scanFile(file, true)
-      
+
       // Cleanup container tạm thời
       try {
         html5QrCode.clear()
@@ -315,12 +317,12 @@ export default function Scan() {
           // Ignore cleanup errors
         }
       }
-      
+
       // Khi quét thành công: rung điện thoại
       if ('vibrate' in navigator) {
         navigator.vibrate(200)
       }
-      
+
       // Trích xuất mã từ kết quả quét và điền vào ô search
       const extractedCode = extractCodeFromResult(result)
       setSearchTerm(extractedCode)
@@ -335,7 +337,7 @@ export default function Scan() {
       }
     }
   }
-  
+
   return (
     <div className="flex-1 bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto max-w-md px-4 py-4 page-enter">
@@ -348,7 +350,7 @@ export default function Scan() {
             Quét mã vạch hoặc tìm kiếm sản phẩm
           </p>
         </div>
-        
+
         {/* Camera Permission Alert */}
         {cameraPermissionDenied && (
           <Alert variant="destructive" className="mb-4">
@@ -361,7 +363,7 @@ export default function Scan() {
             </AlertDescription>
           </Alert>
         )}
-        
+
         {/* Search Input */}
         <Card className="mb-4">
           <CardContent className="p-4">
@@ -369,7 +371,7 @@ export default function Scan() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <Input
-                  placeholder="Nhập mã vạch, ID hoặc tên sản phẩm..."
+                  placeholder="Quét mã vạch hoặc nhập ID, tên, tên khác..."
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                   className="pl-10 pr-10 h-12 text-base"
@@ -385,7 +387,7 @@ export default function Scan() {
                   </button>
                 )}
               </div>
-              
+
               <div className="flex gap-2">
                 <Button
                   onClick={isScanning ? handleStopScan : handleScanClick}
@@ -408,7 +410,7 @@ export default function Scan() {
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Hidden file input */}
         <input
           ref={fileInputRef}
@@ -417,7 +419,7 @@ export default function Scan() {
           onChange={handleFileChange}
           className="hidden"
         />
-        
+
         {/* Camera Scanner */}
         {isScanning && (
           <Card className="mb-4">
@@ -437,7 +439,7 @@ export default function Scan() {
             </CardContent>
           </Card>
         )}
-        
+
         {/* Results */}
         {isLoading ? (
           <div className="space-y-3">
